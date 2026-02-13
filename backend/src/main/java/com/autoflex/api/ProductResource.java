@@ -3,16 +3,18 @@ package com.autoflex.api;
 import java.net.URI;
 import java.util.List;
 
-import com.autoflex.api.dto.ProductMaterialRequest;
-import com.autoflex.api.dto.ProductMaterialResponse;
-import com.autoflex.domain.ProductRawMaterial;
-import com.autoflex.domain.RawMaterial;
-import com.autoflex.repository.ProductRawMaterialRepository;
-import com.autoflex.repository.RawMaterialRepository;
-import com.autoflex.api.dto.ProductRequest;
-import com.autoflex.api.dto.ProductResponse;
+import com.autoflex.api.dto.product.ProductRequest;
+import com.autoflex.api.dto.product.ProductResponse;
+import com.autoflex.api.dto.product.ProductMaterialRequest;
+import com.autoflex.api.dto.product.ProductMaterialResponse;
+
 import com.autoflex.domain.Product;
+import com.autoflex.domain.RawMaterial;
+import com.autoflex.domain.ProductRawMaterial;
+
 import com.autoflex.repository.ProductRepository;
+import com.autoflex.repository.RawMaterialRepository;
+import com.autoflex.repository.ProductRawMaterialRepository;
 
 import io.quarkus.hibernate.orm.panache.PanacheQuery;
 import io.quarkus.panache.common.Sort;

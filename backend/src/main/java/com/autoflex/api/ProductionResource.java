@@ -3,9 +3,11 @@ package com.autoflex.api;
 import java.math.BigDecimal;
 import java.util.List;
 
-import com.autoflex.api.dto.ProductionItemResponse;
-import com.autoflex.api.dto.ProductionSuggestionResponse;
+import com.autoflex.api.dto.production.ProductionItemResponse;
+import com.autoflex.api.dto.production.ProductionSuggestionResponse;
+
 import com.autoflex.domain.Product;
+
 import com.autoflex.service.ProductionSuggestionService;
 
 import jakarta.ws.rs.GET;

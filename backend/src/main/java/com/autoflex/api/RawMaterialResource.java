@@ -3,9 +3,11 @@ package com.autoflex.api;
 import java.net.URI;
 import java.util.List;
 
-import com.autoflex.api.dto.RawMaterialRequest;
-import com.autoflex.api.dto.RawMaterialResponse;
+import com.autoflex.api.dto.material.RawMaterialRequest;
+import com.autoflex.api.dto.material.RawMaterialResponse;
+
 import com.autoflex.domain.RawMaterial;
+
 import com.autoflex.repository.RawMaterialRepository;
 
 import io.quarkus.hibernate.orm.panache.PanacheQuery;

@@ -1,4 +1,4 @@
-package com.autoflex.api.dto;
+package com.autoflex.api.dto.material;
 
 import java.math.BigDecimal;
 

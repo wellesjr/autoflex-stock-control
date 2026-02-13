@@ -1,4 +1,4 @@
-package com.autoflex.api.dto;
+package com.autoflex.api.dto.material;
 
 import java.math.BigDecimal;
 
@@ -7,7 +7,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
-public class ProductRequest {
+public class RawMaterialRequest {
 
     @NotBlank
     @Size(max = 50)
@@ -18,6 +18,6 @@ public class ProductRequest {
     public String name;
 
     @NotNull
-    @DecimalMin("0.01")
-    public BigDecimal price;
+    @DecimalMin("0.0")
+    public BigDecimal stockQuantity;
 }
