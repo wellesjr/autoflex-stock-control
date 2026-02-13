@@ -29,8 +29,13 @@ Pré-requisitos:
 - Docker
 - Docker Compose
 
-Subir tudo:
-
+## Passo a passo 
+1) Abra o terminal na pasta desejada <br>
+    1.1 Execute o seguinte comando
+    ```bash
+    git clone https://github.com/wellesjr/autoflex-stock-control.git
+    ```
+2) Vá ate a pasta ```autoflex-stock-control``` e execute
 ```bash
 docker compose up --build
 ```
