@@ -108,7 +108,7 @@ export default function Products() {
 		actions: (
 			<div className="flex flex-wrap justify-end gap-2">
 				<Button variant="secondary" size="sm" onClick={() => setSelected(p)}>
-					BOM
+					Materials
 				</Button>
 				<Button variant="destructive" size="sm" onClick={() => onDelete(p.id)}>
 					Excluir
@@ -121,7 +121,7 @@ export default function Products() {
 		<div className="grid gap-4">
 			<PageHeader
 				title="Produtos"
-				subtitle="Lista de produtos e suas matérias-primas (BOM)"
+				subtitle="Lista de produtos e seus materiais necessários"
 				onRefresh={load}
 				refreshing={loading}
 			/>
