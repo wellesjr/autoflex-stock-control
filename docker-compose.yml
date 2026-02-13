@@ -1,0 +1,15 @@
+﻿services:
+  db:
+    image: postgres:16
+    container_name: autoflex-db
+    environment:
+      POSTGRES_DB: autoflex
+      POSTGRES_USER: autoflex
+      POSTGRES_PASSWORD: autoflex
+    ports:
+      - "5432:5432"
+    volumes:
+      - autoflex_pgdata:/var/lib/postgresql/data
+
+volumes:
+  autoflex_pgdata:
