@@ -108,7 +108,7 @@ export default function Products() {
 		actions: (
 			<div className="flex flex-wrap justify-end gap-2">
 				<Button variant="secondary" size="sm" onClick={() => setSelected(p)}>
-					Materials
+					Materiais
 				</Button>
 				<Button variant="destructive" size="sm" onClick={() => onDelete(p.id)}>
 					Excluir
