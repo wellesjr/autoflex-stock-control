@@ -3,6 +3,12 @@ package com.autoflex.api;
 import java.net.URI;
 import java.util.List;
 
+import com.autoflex.api.dto.ProductMaterialRequest;
+import com.autoflex.api.dto.ProductMaterialResponse;
+import com.autoflex.domain.ProductRawMaterial;
+import com.autoflex.domain.RawMaterial;
+import com.autoflex.repository.ProductRawMaterialRepository;
+import com.autoflex.repository.RawMaterialRepository;
 import com.autoflex.api.dto.ProductRequest;
 import com.autoflex.api.dto.ProductResponse;
 import com.autoflex.domain.Product;
@@ -22,9 +28,13 @@ import jakarta.ws.rs.core.Response;
 public class ProductResource {
 
     private final ProductRepository productRepository;
+    private final ProductRawMaterialRepository productRawMaterialRepository;
+    private final RawMaterialRepository rawMaterialRepository;
 
-    public ProductResource(ProductRepository productRepository) {
+    public ProductResource(ProductRepository productRepository, ProductRawMaterialRepository productRawMaterialRepository, RawMaterialRepository rawMaterialRepository) {
         this.productRepository = productRepository;
+        this.productRawMaterialRepository = productRawMaterialRepository;
+        this.rawMaterialRepository = rawMaterialRepository;
     }
 
     @GET
@@ -111,6 +121,109 @@ public class ProductResource {
             return Response.status(Response.Status.NO_CONTENT).build();
         }
         productRepository.delete(p);
+        return Response.noContent().build();
+    }
+
+        @GET
+    @Path("/{id}/materials")
+    public List<ProductMaterialResponse> listMaterials(@PathParam("id") Long productId) {
+        Product product = productRepository.findById(productId);
+        if (product == null) {
+            throw new NotFoundException("Product not found");
+        }
+
+        return productRawMaterialRepository
+                .find("product.id", Sort.by("rawMaterial.name"), productId)
+                .stream()
+                .map(prm -> ProductMaterialResponse.of(
+                        prm.rawMaterial.id,
+                        prm.rawMaterial.code,
+                        prm.rawMaterial.name,
+                        prm.requiredQuantity
+                ))
+                .toList();
+    }
+
+    @POST
+    @Path("/{id}/materials")
+    @Transactional
+    public Response addMaterial(@PathParam("id") Long productId, @Valid ProductMaterialRequest req) {
+        Product product = productRepository.findById(productId);
+        if (product == null) {
+            throw new NotFoundException("Product not found");
+        }
+
+        RawMaterial rawMaterial = rawMaterialRepository.findById(req.rawMaterialId);
+        if (rawMaterial == null) {
+            throw new NotFoundException("Raw material not found");
+        }
+
+        ProductRawMaterial existing = productRawMaterialRepository
+                .find("product.id = ?1 and rawMaterial.id = ?2", productId, req.rawMaterialId)
+                .firstResult();
+
+        if (existing != null) {
+            throw new WebApplicationException("Raw material already linked to product", 409);
+        }
+
+        ProductRawMaterial prm = new ProductRawMaterial();
+        prm.product = product;
+        prm.rawMaterial = rawMaterial;
+        prm.requiredQuantity = req.requiredQuantity;
+
+        productRawMaterialRepository.persist(prm);
+
+        return Response.created(URI.create("/api/products/" + productId + "/materials/" + rawMaterial.id))
+                .entity(ProductMaterialResponse.of(rawMaterial.id, rawMaterial.code, rawMaterial.name, prm.requiredQuantity))
+                .build();
+    }
+
+    @PUT
+    @Path("/{id}/materials/{rawMaterialId}")
+    @Transactional
+    public ProductMaterialResponse updateMaterial(
+            @PathParam("id") Long productId,
+            @PathParam("rawMaterialId") Long rawMaterialId,
+            @Valid ProductMaterialRequest req
+    ) {
+        if (!rawMaterialId.equals(req.rawMaterialId)) {
+            throw new WebApplicationException("rawMaterialId in path must match request body", 400);
+        }
+
+        ProductRawMaterial prm = productRawMaterialRepository
+                .find("product.id = ?1 and rawMaterial.id = ?2", productId, rawMaterialId)
+                .firstResult();
+
+        if (prm == null) {
+            throw new NotFoundException("Link not found");
+        }
+
+        prm.requiredQuantity = req.requiredQuantity;
+
+        return ProductMaterialResponse.of(
+                prm.rawMaterial.id,
+                prm.rawMaterial.code,
+                prm.rawMaterial.name,
+                prm.requiredQuantity
+        );
+    }
+
+    @DELETE
+    @Path("/{id}/materials/{rawMaterialId}")
+    @Transactional
+    public Response removeMaterial(
+            @PathParam("id") Long productId,
+            @PathParam("rawMaterialId") Long rawMaterialId
+    ) {
+        ProductRawMaterial prm = productRawMaterialRepository
+                .find("product.id = ?1 and rawMaterial.id = ?2", productId, rawMaterialId)
+                .firstResult();
+
+        if (prm == null) {
+            return Response.noContent().build();
+        }
+
+        productRawMaterialRepository.delete(prm);
         return Response.noContent().build();
     }
 }
