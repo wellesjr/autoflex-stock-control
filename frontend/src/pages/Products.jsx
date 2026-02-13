@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../api/api";
+import ProductMaterials from "./ProductMaterials";
 
 const emptyForm = { code: "", name: "", price: "" };
 
@@ -9,6 +10,7 @@ export default function Products() {
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [error, setError] = useState("");
+  const [selected, setSelected] = useState(null);
 
   const canSubmit = useMemo(() => {
     return form.code.trim() && form.name.trim() && String(form.price).trim();
@@ -20,6 +22,12 @@ export default function Products() {
     try {
       const res = await api.get("/api/products", { params: { q } });
       setItems(res.data);
+
+      // keep selected in sync (if it still exists)
+      if (selected?.id) {
+        const updated = res.data.find((p) => p.id === selected.id);
+        if (updated) setSelected(updated);
+      }
     } catch (e) {
       setError(e?.response?.data?.message || e.message || "Failed to load products");
     } finally {
@@ -54,6 +62,10 @@ export default function Products() {
     setError("");
     try {
       await api.delete(`/api/products/${id}`);
+
+      // if deleted product was selected, clear selection
+      if (selected?.id === id) setSelected(null);
+
       await load();
     } catch (e) {
       setError(e?.response?.data?.message || e.message || "Failed to delete product");
@@ -140,17 +152,25 @@ export default function Products() {
                 </tr>
               </thead>
               <tbody>
-                {items.map((p) => (
-                  <tr key={p.id} style={{ borderBottom: "1px solid #f3f3f3" }}>
-                    <td>{p.id}</td>
-                    <td>{p.code}</td>
-                    <td>{p.name}</td>
-                    <td style={{ textAlign: "right" }}>{Number(p.price).toFixed(2)}</td>
-                    <td style={{ textAlign: "right" }}>
-                      <button onClick={() => onDelete(p.id)}>Delete</button>
-                    </td>
-                  </tr>
-                ))}
+                {items.map((p) => {
+                  const isSelected = selected?.id === p.id;
+                  return (
+                    <tr key={p.id} style={{ borderBottom: "1px solid #f3f3f3" }}>
+                      <td>{p.id}</td>
+                      <td>
+                        <span style={{ fontWeight: isSelected ? 700 : 400 }}>{p.code}</span>
+                      </td>
+                      <td>{p.name}</td>
+                      <td style={{ textAlign: "right" }}>{Number(p.price).toFixed(2)}</td>
+                      <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
+                        <button onClick={() => setSelected(p)} style={{ marginRight: 8 }}>
+                          BOM
+                        </button>
+                        <button onClick={() => onDelete(p.id)}>Delete</button>
+                      </td>
+                    </tr>
+                  );
+                })}
                 {!items.length ? (
                   <tr>
                     <td colSpan="5" style={{ opacity: 0.7, padding: 12 }}>
@@ -163,6 +183,8 @@ export default function Products() {
           </div>
         </div>
       </section>
+
+      {selected ? <ProductMaterials product={selected} /> : null}
 
       <p style={{ opacity: 0.7, margin: 0 }}>
         Tip: keep backend running on <code>http://localhost:8080</code>
