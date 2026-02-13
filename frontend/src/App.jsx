@@ -1,70 +1,45 @@
-import { useState } from "react";
 import Products from "./pages/Products";
 import RawMaterials from "./pages/RawMaterials";
 import Production from "./pages/Production";
 
-function NavButton({ active, children, onClick }) {
-	return (
-		<button
-			onClick={onClick}
-			style={{
-				padding: "8px 12px",
-				borderRadius: 8,
-				border: "1px solid #ddd",
-				background: active ? "#111" : "#fff",
-				color: active ? "#fff" : "#111",
-				cursor: "pointer",
-			}}>
-			{children}
-		</button>
-	);
-}
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card } from "@/components/ui/card";
 
 export default function App() {
-	const [page, setPage] = useState("products");
+  return (
+    <main className="mx-auto grid w-full max-w-6xl gap-3 p-3 sm:gap-4 sm:p-4">
+      <div>
+        <h1 className="text-xl font-semibold sm:text-2xl">Autoflex Stock Control</h1>
+        <p className="text-sm text-muted-foreground">Frontend (RF005–RF008)</p>
+      </div>
 
-	return (
-		<main
-			style={{
-				maxWidth: 1100,
-				margin: "0 auto",
-				padding: 16,
-				display: "grid",
-				gap: 16,
-			}}>
-			<header
-				style={{
-					display: "flex",
-					justifyContent: "space-between",
-					alignItems: "center",
-					gap: 12,
-					flexWrap: "wrap",
-				}}>
-				<div>
-					<h1 style={{ margin: 0 }}>Autoflex Stock Control</h1>
-					<p style={{ margin: 0, opacity: 0.75 }}>Frontend (RF005–RF008)</p>
-				</div>
+      <Card className="p-2 sm:p-3">
+        <Tabs defaultValue="products" className="w-full">
+          <TabsList className="grid h-auto w-full grid-cols-1 gap-2 sm:grid-cols-3">
+            <TabsTrigger value="products" className="w-full">
+              Produtos
+            </TabsTrigger>
+            <TabsTrigger value="raw" className="w-full">
+              Matérias-Primas
+            </TabsTrigger>
+            <TabsTrigger value="production" className="w-full">
+              Produção
+            </TabsTrigger>
+          </TabsList>
 
-				<nav style={{ display: "flex", gap: 8 }}>
-					<NavButton
-						active={page === "products"}
-						onClick={() => setPage("products")}>
-						Products
-					</NavButton>
-					<NavButton active={page === "raw"} onClick={() => setPage("raw")}>
-						Raw Materials
-					</NavButton>
-					<NavButton
-						active={page === "production"}
-						onClick={() => setPage("production")}>
-						Production
-					</NavButton>
-				</nav>
-			</header>
+          <TabsContent value="products" className="mt-3 sm:mt-4">
+            <Products />
+          </TabsContent>
 
-			{page === "products" ? <Products /> : null}
-			{page === "raw" ? <RawMaterials /> : null}
-            {page === "production" ? <Production /> : null}
-		</main>
-	);
+          <TabsContent value="raw" className="mt-3 sm:mt-4">
+            <RawMaterials />
+          </TabsContent>
+
+          <TabsContent value="production" className="mt-3 sm:mt-4">
+            <Production />
+          </TabsContent>
+        </Tabs>
+      </Card>
+    </main>
+  );
 }

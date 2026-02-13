@@ -1,194 +1,186 @@
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../api/api";
+
+import PageHeader from "../components/PageHeader";
+import ErrorAlert from "../components/ErrorAlert";
+import FormCard from "../components/FormCard";
+import DataTable from "../components/DataTable";
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+
 import ProductMaterials from "./ProductMaterials";
 
 const emptyForm = { code: "", name: "", price: "" };
 
 export default function Products() {
-  const [items, setItems] = useState([]);
-  const [q, setQ] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [form, setForm] = useState(emptyForm);
-  const [error, setError] = useState("");
-  const [selected, setSelected] = useState(null);
+	const [items, setItems] = useState([]);
+	const [q, setQ] = useState("");
+	const [loading, setLoading] = useState(false);
 
-  const canSubmit = useMemo(() => {
-    return form.code.trim() && form.name.trim() && String(form.price).trim();
-  }, [form]);
+	const [form, setForm] = useState(emptyForm);
+	const [error, setError] = useState("");
 
-  async function load() {
-    setLoading(true);
-    setError("");
-    try {
-      const res = await api.get("/api/products", { params: { q } });
-      setItems(res.data);
+	const [selected, setSelected] = useState(null);
 
-      // keep selected in sync (if it still exists)
-      if (selected?.id) {
-        const updated = res.data.find((p) => p.id === selected.id);
-        if (updated) setSelected(updated);
-      }
-    } catch (e) {
-      setError(e?.response?.data?.message || e.message || "Failed to load products");
-    } finally {
-      setLoading(false);
-    }
-  }
+	const canSubmit = useMemo(() => {
+		return form.code.trim() && form.name.trim() && String(form.price).trim();
+	}, [form]);
 
-  useEffect(() => {
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+	async function load() {
+		setLoading(true);
+		setError("");
+		try {
+			const res = await api.get("/api/products", { params: { q } });
+			setItems(res.data);
 
-  async function onCreate(e) {
-    e.preventDefault();
-    setError("");
-    try {
-      const payload = {
-        code: form.code.trim(),
-        name: form.name.trim(),
-        price: Number(form.price),
-      };
-      await api.post("/api/products", payload);
-      setForm(emptyForm);
-      await load();
-    } catch (e) {
-      setError(e?.response?.data || e?.response?.data?.message || e.message || "Failed to create product");
-    }
-  }
+			if (selected?.id) {
+				const updated = res.data.find((p) => p.id === selected.id);
+				if (updated) setSelected(updated);
+			}
+		} catch (e) {
+			setError(
+				e?.response?.data?.message || e.message || "Falhao ao carregar produtos",
+			);
+		} finally {
+			setLoading(false);
+		}
+	}
 
-  async function onDelete(id) {
-    if (!confirm("Delete this product?")) return;
-    setError("");
-    try {
-      await api.delete(`/api/products/${id}`);
+	useEffect(() => {
+		load();
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []);
 
-      // if deleted product was selected, clear selection
-      if (selected?.id === id) setSelected(null);
+	async function onCreate(e) {
+		e.preventDefault();
+		setError("");
+		try {
+			await api.post("/api/products", {
+				code: form.code.trim(),
+				name: form.name.trim(),
+				price: Number(form.price),
+			});
+			setForm(emptyForm);
+			await load();
+		} catch (e) {
+			setError(
+				e?.response?.data ||
+					e?.response?.data?.message ||
+					e.message ||
+					"Falha ao criar produto",
+			);
+		}
+	}
 
-      await load();
-    } catch (e) {
-      setError(e?.response?.data?.message || e.message || "Failed to delete product");
-    }
-  }
+	async function onDelete(id) {
+		if (!confirm("Excluir este produto?")) return;
+		setError("");
+		try {
+			await api.delete(`/api/products/${id}`);
+			if (selected?.id === id) setSelected(null);
+			await load();
+		} catch (e) {
+			setError(
+				e?.response?.data?.message || e.message || "Falha ao excluir produto",
+			);
+		}
+	}
 
-  return (
-    <div style={{ display: "grid", gap: 16 }}>
-      <header style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-        <div>
-          <h2 style={{ margin: 0 }}>Products</h2>
-          <p style={{ margin: 0, opacity: 0.8 }}>CRUD for products (RF005)</p>
-        </div>
+	const columns = [
+		{ key: "id", header: "ID" },
+		{ key: "code", header: "Código" },
+		{ key: "name", header: "Nome" },
+		{ key: "price", header: "Preço", className: "text-right" },
+		{ key: "actions", header: "", className: "text-right" },
+	];
 
-        <button onClick={load} disabled={loading}>
-          {loading ? "Loading..." : "Refresh"}
-        </button>
-      </header>
+	const rows = items.map((p) => ({
+		key: p.id,
+		id: p.id,
+		code: (
+			<span className={selected?.id === p.id ? "font-semibold" : ""}>
+				{p.code}
+			</span>
+		),
+		name: p.name,
+		price: Number(p.price).toFixed(2),
+		actions: (
+			<div className="flex flex-wrap justify-end gap-2">
+				<Button variant="secondary" size="sm" onClick={() => setSelected(p)}>
+					BOM
+				</Button>
+				<Button variant="destructive" size="sm" onClick={() => onDelete(p.id)}>
+					Excluir
+				</Button>
+			</div>
+		),
+	}));
 
-      {error ? (
-        <div style={{ padding: 12, border: "1px solid #f99", background: "#fff5f5" }}>
-          <strong>Error:</strong> <span>{String(error)}</span>
-        </div>
-      ) : null}
+	return (
+		<div className="grid gap-4">
+			<PageHeader
+				title="Produtos"
+				subtitle="Lista de produtos e suas matérias-primas (BOM)"
+				onRefresh={load}
+				refreshing={loading}
+			/>
 
-      <section style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }}>
-        <div style={{ border: "1px solid #ddd", borderRadius: 8, padding: 16 }}>
-          <h3 style={{ marginTop: 0 }}>Create product</h3>
-          <form onSubmit={onCreate} style={{ display: "grid", gap: 10 }}>
-            <label style={{ display: "grid", gap: 6 }}>
-              <span>Code</span>
-              <input
-                value={form.code}
-                onChange={(e) => setForm((f) => ({ ...f, code: e.target.value }))}
-                placeholder="P-001"
-              />
-            </label>
+			<ErrorAlert error={error} />
 
-            <label style={{ display: "grid", gap: 6 }}>
-              <span>Name</span>
-              <input
-                value={form.name}
-                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                placeholder="Brake Pad"
-              />
-            </label>
+			<div className="grid gap-4 lg:grid-cols-2">
+				<FormCard title="Criar produto">
+					<form onSubmit={onCreate} className="grid gap-3">
+						<Input
+							value={form.code}
+							onChange={(e) => setForm((f) => ({ ...f, code: e.target.value }))}
+							placeholder="Código (ex. P-001)"
+						/>
+						<Input
+							value={form.name}
+							onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+							placeholder="Nome (ex. Pastilha de Freio)"
+						/>
+						<Input
+							type="number"
+							step="0.01"
+							value={form.price}
+							onChange={(e) =>
+								setForm((f) => ({ ...f, price: e.target.value }))
+							}
+							placeholder="Preço (ex. 120.00)"
+						/>
+						<Button type="submit" disabled={!canSubmit}>
+							Criar
+						</Button>
+					</form>
+				</FormCard>
 
-            <label style={{ display: "grid", gap: 6 }}>
-              <span>Price</span>
-              <input
-                type="number"
-                step="0.01"
-                value={form.price}
-                onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}
-                placeholder="120.00"
-              />
-            </label>
+				<FormCard title="Lista">
+					<div className="grid gap-2 sm:grid-cols-[1fr_auto]">
+						<Input
+							value={q}
+							onChange={(e) => setQ(e.target.value)}
+							placeholder="Pesquisar..."
+						/>
+						<Button
+							variant="outline"
+							onClick={load}
+							disabled={loading}
+							className="w-full sm:w-auto">
+							Pesquisar
+						</Button>
+					</div>
 
-            <button type="submit" disabled={!canSubmit}>
-              Create
-            </button>
-          </form>
-        </div>
+					<DataTable
+						columns={columns}
+						rows={rows}
+						emptyText="Nenhum produto encontrado"
+					/>
+				</FormCard>
+			</div>
 
-        <div style={{ border: "1px solid #ddd", borderRadius: 8, padding: 16 }}>
-          <h3 style={{ marginTop: 0 }}>List</h3>
-
-          <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search..." />
-            <button onClick={load} disabled={loading}>
-              Search
-            </button>
-          </div>
-
-          <div style={{ overflowX: "auto" }}>
-            <table width="100%" cellPadding="8" style={{ borderCollapse: "collapse" }}>
-              <thead>
-                <tr style={{ textAlign: "left", borderBottom: "1px solid #eee" }}>
-                  <th>ID</th>
-                  <th>Code</th>
-                  <th>Name</th>
-                  <th style={{ textAlign: "right" }}>Price</th>
-                  <th />
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((p) => {
-                  const isSelected = selected?.id === p.id;
-                  return (
-                    <tr key={p.id} style={{ borderBottom: "1px solid #f3f3f3" }}>
-                      <td>{p.id}</td>
-                      <td>
-                        <span style={{ fontWeight: isSelected ? 700 : 400 }}>{p.code}</span>
-                      </td>
-                      <td>{p.name}</td>
-                      <td style={{ textAlign: "right" }}>{Number(p.price).toFixed(2)}</td>
-                      <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
-                        <button onClick={() => setSelected(p)} style={{ marginRight: 8 }}>
-                          BOM
-                        </button>
-                        <button onClick={() => onDelete(p.id)}>Delete</button>
-                      </td>
-                    </tr>
-                  );
-                })}
-                {!items.length ? (
-                  <tr>
-                    <td colSpan="5" style={{ opacity: 0.7, padding: 12 }}>
-                      No products found
-                    </td>
-                  </tr>
-                ) : null}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-      {selected ? <ProductMaterials product={selected} /> : null}
-
-      <p style={{ opacity: 0.7, margin: 0 }}>
-        Tip: keep backend running on <code>http://localhost:8080</code>
-      </p>
-    </div>
-  );
+			{selected ? <ProductMaterials product={selected} /> : null}
+		</div>
+	);
 }

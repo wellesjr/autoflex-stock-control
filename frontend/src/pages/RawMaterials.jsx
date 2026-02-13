@@ -1,12 +1,21 @@
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../api/api";
 
+import PageHeader from "../components/PageHeader";
+import ErrorAlert from "../components/ErrorAlert";
+import FormCard from "../components/FormCard";
+import DataTable from "../components/DataTable";
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+
 const emptyForm = { code: "", name: "", stockQuantity: "" };
 
 export default function RawMaterials() {
   const [items, setItems] = useState([]);
   const [q, setQ] = useState("");
   const [loading, setLoading] = useState(false);
+
   const [form, setForm] = useState(emptyForm);
   const [error, setError] = useState("");
 
@@ -21,7 +30,7 @@ export default function RawMaterials() {
       const res = await api.get("/api/raw-materials", { params: { q } });
       setItems(res.data);
     } catch (e) {
-      setError(e?.response?.data?.message || e.message || "Failed to load raw materials");
+      setError(e?.response?.data?.message || e.message || "Falha ao carregar matérias-primas");
     } finally {
       setLoading(false);
     }
@@ -36,137 +45,95 @@ export default function RawMaterials() {
     e.preventDefault();
     setError("");
     try {
-      const payload = {
+      await api.post("/api/raw-materials", {
         code: form.code.trim(),
         name: form.name.trim(),
         stockQuantity: Number(form.stockQuantity),
-      };
-      await api.post("/api/raw-materials", payload);
+      });
       setForm(emptyForm);
       await load();
     } catch (e) {
-      setError(e?.response?.data || e?.response?.data?.message || e.message || "Failed to create raw material");
+      setError(e?.response?.data || e?.response?.data?.message || e.message || "Falha ao criar matéria-prima");
     }
   }
 
   async function onDelete(id) {
-    if (!confirm("Delete this raw material?")) return;
+    if (!confirm("Excluir esta matéria-prima?")) return;
     setError("");
     try {
       await api.delete(`/api/raw-materials/${id}`);
       await load();
     } catch (e) {
-      setError(e?.response?.data?.message || e.message || "Failed to delete raw material");
+      setError(e?.response?.data?.message || e.message || "Falha ao excluir matéria-prima");
     }
   }
 
+  const columns = [
+    { key: "id", header: "ID" },
+    { key: "code", header: "Código" },
+    { key: "name", header: "Nome" },
+    { key: "stock", header: "Estoque", className: "text-right" },
+    { key: "actions", header: "", className: "text-right" },
+  ];
+
+  const rows = items.map((rm) => ({
+    key: rm.id,
+    id: rm.id,
+    code: rm.code,
+    name: rm.name,
+    stock: Number(rm.stockQuantity).toFixed(2),
+    actions: (
+      <div className="flex justify-end">
+        <Button variant="destructive" size="sm" onClick={() => onDelete(rm.id)}>
+          Excluir
+        </Button>
+      </div>
+    ),
+  }));
+
   return (
-    <div style={{ display: "grid", gap: 16 }}>
-      <header style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-        <div>
-          <h2 style={{ margin: 0 }}>Raw Materials</h2>
-          <p style={{ margin: 0, opacity: 0.8 }}>CRUD for raw materials (RF006)</p>
-        </div>
+    <div className="grid gap-4">
+      <PageHeader title="Matérias-primas" subtitle="" onRefresh={load} refreshing={loading} />
 
-        <button onClick={load} disabled={loading}>
-          {loading ? "Loading..." : "Refresh"}
-        </button>
-      </header>
+      <ErrorAlert error={error} />
 
-      {error ? (
-        <div style={{ padding: 12, border: "1px solid #f99", background: "#fff5f5" }}>
-          <strong>Error:</strong> <span>{String(error)}</span>
-        </div>
-      ) : null}
-
-      <section style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }}>
-        <div style={{ border: "1px solid #ddd", borderRadius: 8, padding: 16 }}>
-          <h3 style={{ marginTop: 0 }}>Create raw material</h3>
-          <form onSubmit={onCreate} style={{ display: "grid", gap: 10 }}>
-            <label style={{ display: "grid", gap: 6 }}>
-              <span>Code</span>
-              <input
-                value={form.code}
-                onChange={(e) => setForm((f) => ({ ...f, code: e.target.value }))}
-                placeholder="RM-001"
-              />
-            </label>
-
-            <label style={{ display: "grid", gap: 6 }}>
-              <span>Name</span>
-              <input
-                value={form.name}
-                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                placeholder="Steel"
-              />
-            </label>
-
-            <label style={{ display: "grid", gap: 6 }}>
-              <span>Stock quantity</span>
-              <input
-                type="number"
-                step="0.01"
-                value={form.stockQuantity}
-                onChange={(e) => setForm((f) => ({ ...f, stockQuantity: e.target.value }))}
-                placeholder="100"
-              />
-            </label>
-
-            <button type="submit" disabled={!canSubmit}>
-              Create
-            </button>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <FormCard title="Criar matéria-prima">
+          <form onSubmit={onCreate} className="grid gap-3">
+            <Input
+              value={form.code}
+              onChange={(e) => setForm((f) => ({ ...f, code: e.target.value }))}
+              placeholder="Código (ex. RM-001)"
+            />
+            <Input
+              value={form.name}
+              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+              placeholder="Nome (ex. Aço inox 304)"
+            />
+            <Input
+              type="number"
+              step="0.01"
+              value={form.stockQuantity}
+              onChange={(e) => setForm((f) => ({ ...f, stockQuantity: e.target.value }))}
+              placeholder="Quantidade em estoque (ex. 100)"
+            />
+            <Button type="submit" disabled={!canSubmit}>
+              Criar     
+            </Button>
           </form>
-        </div>
+        </FormCard>
 
-        <div style={{ border: "1px solid #ddd", borderRadius: 8, padding: 16 }}>
-          <h3 style={{ marginTop: 0 }}>List</h3>
-
-          <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search..." />
-            <button onClick={load} disabled={loading}>
-              Search
-            </button>
+        <FormCard title="Lista">
+          <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
+            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Pesquisar..." />
+            <Button variant="outline" onClick={load} disabled={loading} className="w-full sm:w-auto">
+              Pesquisar
+            </Button>
           </div>
 
-          <div style={{ overflowX: "auto" }}>
-            <table width="100%" cellPadding="8" style={{ borderCollapse: "collapse" }}>
-              <thead>
-                <tr style={{ textAlign: "left", borderBottom: "1px solid #eee" }}>
-                  <th>ID</th>
-                  <th>Code</th>
-                  <th>Name</th>
-                  <th style={{ textAlign: "right" }}>Stock</th>
-                  <th />
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((rm) => (
-                  <tr key={rm.id} style={{ borderBottom: "1px solid #f3f3f3" }}>
-                    <td>{rm.id}</td>
-                    <td>{rm.code}</td>
-                    <td>{rm.name}</td>
-                    <td style={{ textAlign: "right" }}>{Number(rm.stockQuantity).toFixed(2)}</td>
-                    <td style={{ textAlign: "right" }}>
-                      <button onClick={() => onDelete(rm.id)}>Delete</button>
-                    </td>
-                  </tr>
-                ))}
-                {!items.length ? (
-                  <tr>
-                    <td colSpan="5" style={{ opacity: 0.7, padding: 12 }}>
-                      No raw materials found
-                    </td>
-                  </tr>
-                ) : null}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-      <p style={{ opacity: 0.7, margin: 0 }}>
-        Tip: keep backend running on <code>http://localhost:8080</code>
-      </p>
+          <DataTable columns={columns} rows={rows} emptyText="Nenhuma matéria-prima encontrada" />
+        </FormCard>
+      </div>
     </div>
   );
 }

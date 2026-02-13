@@ -1,6 +1,21 @@
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../api/api";
 
+import PageHeader from "../components/PageHeader";
+import ErrorAlert from "../components/ErrorAlert";
+import DataTable from "../components/DataTable";
+import FormCard from "../components/FormCard";
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
+
 export default function ProductMaterials({ product }) {
 	const [materials, setMaterials] = useState([]);
 	const [rawMaterials, setRawMaterials] = useState([]);
@@ -27,7 +42,7 @@ export default function ProductMaterials({ product }) {
 			setRawMaterials(rawRes.data || []);
 		} catch (e) {
 			setError(
-				e?.response?.data?.message || e.message || "Failed to load materials",
+				e?.response?.data?.message || e.message || "Falha ao carregar materiais",
 			);
 		} finally {
 			setLoading(false);
@@ -59,7 +74,7 @@ export default function ProductMaterials({ product }) {
 				e?.response?.data ||
 					e?.response?.data?.message ||
 					e.message ||
-					"Failed to add material",
+					"Falha ao adicionar material",
 			);
 		}
 	}
@@ -77,19 +92,19 @@ export default function ProductMaterials({ product }) {
 				e?.response?.data ||
 					e?.response?.data?.message ||
 					e.message ||
-					"Failed to update",
+					"Falha ao atualizar quantidade necessária",
 			);
 		}
 	}
 
 	async function onRemove(rmId) {
-		if (!confirm("Remove this material from product?")) return;
+		if (!confirm("Remover esta matéria-prima do produto?")) return;
 		setError("");
 		try {
 			await api.delete(`/api/products/${product.id}/materials/${rmId}`);
 			await loadAll();
 		} catch (e) {
-			setError(e?.response?.data?.message || e.message || "Failed to remove");
+			setError(e?.response?.data?.message || e.message || "Falha ao remover material");
 		}
 	}
 
@@ -98,172 +113,137 @@ export default function ProductMaterials({ product }) {
 		(rm) => !linkedIds.has(String(rm.id)),
 	);
 
+	const columns = [
+		{ key: "material", header: "Matéria-prima" },
+		{ key: "qty", header: "Quantidade necessária", className: "text-right" },
+		{ key: "actions", header: "", className: "text-right" },
+	];
+
+	const rows = materials.map((m) => ({
+		key: m.rawMaterialId,
+		material: (
+			<div>
+				<div className="font-semibold">{m.rawMaterialCode}</div>
+				<div className="text-sm text-muted-foreground">{m.rawMaterialName}</div>
+			</div>
+		),
+		qty: (
+			<EditableQty
+				value={m.requiredQuantity}
+				onSave={(v) => onUpdate(m.rawMaterialId, v)}
+			/>
+		),
+		actions: (
+			<Button
+				variant="destructive"
+				size="sm"
+				onClick={() => onRemove(m.rawMaterialId)}>
+				Remove
+			</Button>
+		),
+	}));
+
 	return (
-		<div
-			style={{
-				border: "1px solid #ddd",
-				borderRadius: 8,
-				padding: 16,
-				display: "grid",
-				gap: 12,
-			}}>
-			<div
-				style={{
-					display: "flex",
-					justifyContent: "space-between",
-					alignItems: "baseline",
-					gap: 12,
-				}}>
-				<div>
-					<h3 style={{ margin: 0 }}>Bill of Materials (RF007)</h3>
-					<p style={{ margin: 0, opacity: 0.8 }}>
-						Product: <strong>{product.code}</strong> — {product.name}
-					</p>
-				</div>
+		<div className="grid gap-4">
+			<PageHeader
+				title="Lista de Materiais"
+				subtitle={`Produto: ${product.code} — ${product.name}`}
+				onRefresh={loadAll}
+				refreshing={loading}
+			/>
 
-				<button onClick={loadAll} disabled={loading}>
-					{loading ? "Loading..." : "Refresh"}
-				</button>
-			</div>
+			<ErrorAlert error={error} />
 
-			{error ? (
-				<div
-					style={{
-						padding: 12,
-						border: "1px solid #f99",
-						background: "#fff5f5",
-					}}>
-					<strong>Error:</strong> <span>{String(error)}</span>
-				</div>
-			) : null}
+			<FormCard title="Adicionar matéria-prima ao produto">
+				<form onSubmit={onAdd} className="grid gap-3 md:grid-cols-3">
+					<div className="md:col-span-2">
+						<Select value={rawMaterialId} onValueChange={setRawMaterialId}>
+							<SelectTrigger>
+								<SelectValue placeholder="Selecionar matéria-prima..." />
+							</SelectTrigger>
+							<SelectContent>
+								{availableToAdd.map((rm) => (
+									<SelectItem key={rm.id} value={String(rm.id)}>
+										{rm.code} — {rm.name} (estoque:{" "}
+										{Number(rm.stockQuantity).toFixed(2)})
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</div>
 
-			<form
-				onSubmit={onAdd}
-				style={{
-					display: "grid",
-					gap: 10,
-					gridTemplateColumns: "1fr 1fr auto",
-				}}>
-				<label style={{ display: "grid", gap: 6 }}>
-					<span>Raw material</span>
-					<select
-						value={rawMaterialId}
-						onChange={(e) => setRawMaterialId(e.target.value)}>
-						<option value="">Select...</option>
-						{availableToAdd.map((rm) => (
-							<option key={rm.id} value={rm.id}>
-								{rm.code} — {rm.name} (stock:{" "}
-								{Number(rm.stockQuantity).toFixed(2)})
-							</option>
-						))}
-					</select>
-				</label>
+					<div className="grid gap-2 sm:grid-cols-[1fr_auto]">
+						<Input
+							type="number"
+							step="0.0001"
+							value={requiredQuantity}
+							onChange={(e) => setRequiredQuantity(e.target.value)}
+							placeholder="Quantidade necessária (ex. 10)"
+						/>
+						<Button
+							type="submit"
+							disabled={!canAdd}
+							className="w-full sm:w-auto">
+							Adicionar
+						</Button>
+					</div>
+				</form>
+			</FormCard>
 
-				<label style={{ display: "grid", gap: 6 }}>
-					<span>Required quantity</span>
-					<input
-						type="number"
-						step="0.0001"
-						value={requiredQuantity}
-						onChange={(e) => setRequiredQuantity(e.target.value)}
-						placeholder="e.g. 2"
-					/>
-				</label>
-
-				<div style={{ display: "grid", alignContent: "end" }}>
-					<button type="submit" disabled={!canAdd}>
-						Add
-					</button>
-				</div>
-			</form>
-
-			<div style={{ overflowX: "auto" }}>
-				<table
-					width="100%"
-					cellPadding="8"
-					style={{ borderCollapse: "collapse" }}>
-					<thead>
-						<tr style={{ textAlign: "left", borderBottom: "1px solid #eee" }}>
-							<th>Raw material</th>
-							<th style={{ textAlign: "right" }}>Required qty</th>
-							<th />
-						</tr>
-					</thead>
-					<tbody>
-						{materials.map((m) => (
-							<Row
-								key={m.rawMaterialId}
-								item={m}
-								onUpdate={(qty) => onUpdate(m.rawMaterialId, qty)}
-								onRemove={() => onRemove(m.rawMaterialId)}
-							/>
-						))}
-						{!materials.length ? (
-							<tr>
-								<td colSpan="3" style={{ opacity: 0.7, padding: 12 }}>
-									No materials linked yet
-								</td>
-							</tr>
-						) : null}
-					</tbody>
-				</table>
-			</div>
+			<DataTable
+				columns={columns}
+				rows={rows}
+				emptyText="Nenhum material vinculado ainda"
+			/>
 		</div>
 	);
 }
 
-function Row({ item, onUpdate, onRemove }) {
+function EditableQty({ value, onSave }) {
 	const [editing, setEditing] = useState(false);
-	const [qty, setQty] = useState(String(item.requiredQuantity ?? ""));
+	const [qty, setQty] = useState(() => String(value ?? ""));
+
+	if (!editing) {
+		return (
+			<div className="flex flex-wrap items-center justify-end gap-2">
+				<span>{Number(value).toFixed(4)}</span>
+				<Button variant="secondary" size="sm" onClick={() => setEditing(true)}>
+					Editar
+				</Button>
+			</div>
+		);
+	}
 
 	return (
-		<tr style={{ borderBottom: "1px solid #f3f3f3" }}>
-			<td>
-				<strong>{item.rawMaterialCode}</strong> — {item.rawMaterialName}
-			</td>
-
-			<td style={{ textAlign: "right" }}>
-				{editing ? (
-					<input
-						type="number"
-						step="0.0001"
-						value={qty}
-						onChange={(e) => setQty(e.target.value)}
-						style={{ width: 140, textAlign: "right" }}
-					/>
-				) : (
-					Number(item.requiredQuantity).toFixed(4)
-				)}
-			</td>
-
-			<td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
-				{editing ? (
-					<>
-						<button
-							onClick={() => {
-								setEditing(false);
-								onUpdate(qty);
-							}}
-							style={{ marginRight: 8 }}>
-							Save
-						</button>
-						<button
-							onClick={() => {
-								setEditing(false);
-								setQty(String(item.requiredQuantity ?? ""));
-							}}>
-							Cancel
-						</button>
-					</>
-				) : (
-					<>
-						<button onClick={() => setEditing(true)} style={{ marginRight: 8 }}>
-							Edit
-						</button>
-						<button onClick={onRemove}>Remove</button>
-					</>
-				)}
-			</td>
-		</tr>
+		<div className="grid w-full gap-2 sm:flex sm:items-center sm:justify-end">
+			<Input
+				className="w-full text-right sm:w-32"
+				type="number"
+				step="0.0001"
+				value={qty}
+				onChange={(e) => setQty(e.target.value)}
+			/>
+			<div className="grid grid-cols-2 gap-2 sm:flex sm:w-auto">
+				<Button
+					size="sm"
+					className="w-full sm:w-auto"
+					onClick={() => {
+						setEditing(false);
+						onSave(qty);
+					}}>
+					Salvar
+				</Button>
+				<Button
+					variant="outline"
+					size="sm"
+					className="w-full sm:w-auto"
+					onClick={() => {
+						setEditing(false);
+						setQty(String(value ?? ""));
+					}}>
+					Cancel
+				</Button>
+			</div>
+		</div>
 	);
 }
