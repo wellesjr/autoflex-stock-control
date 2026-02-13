@@ -12,7 +12,7 @@ export default function PageHeader({ title, subtitle, onRefresh, refreshing, rig
         {right}
         {onRefresh ? (
           <Button variant="outline" onClick={onRefresh} disabled={refreshing} className="w-full sm:w-auto">
-            {refreshing ? "Loading..." : "Refresh"}
+            {refreshing ? "Carregando..." : "Atualizar"}
           </Button>
         ) : null}
       </div>

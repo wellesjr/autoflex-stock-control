@@ -7,10 +7,9 @@ import { Card } from "@/components/ui/card";
 
 export default function App() {
   return (
-    <main className="mx-auto grid w-full max-w-6xl gap-3 p-3 sm:gap-4 sm:p-4">
+    <main className="mx-auto grid w-full gap-3 sm:gap-4 sm:p-4">
       <div>
-        <h1 className="text-xl font-semibold sm:text-2xl">Autoflex Stock Control</h1>
-        <p className="text-sm text-muted-foreground">Frontend (RF005–RF008)</p>
+        <h1 className="text-xl font-semibold sm:text-2xl">Controle de estoque Autoflex</h1>
       </div>
 
       <Card className="p-2 sm:p-3">
