@@ -4,6 +4,7 @@ import { api } from "../api/api";
 import PageHeader from "../components/PageHeader";
 import ErrorAlert from "../components/ErrorAlert";
 import DataTable from "../components/DataTable";
+import { formatCurrencyBRL } from "@/lib/formatters";
 
 export default function Production() {
   const [data, setData] = useState(null);
@@ -41,12 +42,12 @@ export default function Production() {
     id: it.productId,
     code: it.productCode,
     name: it.productName,
-    unit: Number(it.unitPrice).toFixed(2),
+    unit: formatCurrencyBRL(it.unitPrice),
     qty: it.suggestedQuantity,
-    total: Number(it.totalValue).toFixed(2),
+    total: formatCurrencyBRL(it.totalValue),
   }));
 
-  const grandTotal = Number(data?.grandTotalValue || 0).toFixed(2);
+  const grandTotal = formatCurrencyBRL(data?.grandTotalValue);
 
   return (
     <div className="grid gap-4">

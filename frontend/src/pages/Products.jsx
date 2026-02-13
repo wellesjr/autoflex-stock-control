@@ -8,6 +8,7 @@ import DataTable from "../components/DataTable";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { formatCurrencyBRL } from "@/lib/formatters";
 
 import ProductMaterials from "./ProductMaterials";
 
@@ -104,7 +105,7 @@ export default function Products() {
 			</span>
 		),
 		name: p.name,
-		price: Number(p.price).toFixed(2),
+		price: formatCurrencyBRL(p.price),
 		actions: (
 			<div className="flex flex-wrap justify-end gap-2">
 				<Button variant="secondary" size="sm" onClick={() => setSelected(p)}>

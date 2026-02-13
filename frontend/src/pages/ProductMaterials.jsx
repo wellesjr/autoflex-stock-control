@@ -15,6 +15,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { formatInteger } from "@/lib/formatters";
 
 export default function ProductMaterials({ product }) {
 	const [materials, setMaterials] = useState([]);
@@ -165,7 +166,7 @@ export default function ProductMaterials({ product }) {
 								{availableToAdd.map((rm) => (
 									<SelectItem key={rm.id} value={String(rm.id)}>
 										{rm.code} — {rm.name} (estoque:{" "}
-										{Number(rm.stockQuantity).toFixed(2)})
+										{formatInteger(rm.stockQuantity)})
 									</SelectItem>
 								))}
 							</SelectContent>

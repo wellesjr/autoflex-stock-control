@@ -8,6 +8,7 @@ import DataTable from "../components/DataTable";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { formatInteger } from "@/lib/formatters";
 
 const emptyForm = { code: "", name: "", stockQuantity: "" };
 
@@ -81,7 +82,7 @@ export default function RawMaterials() {
     id: rm.id,
     code: rm.code,
     name: rm.name,
-    stock: Number(rm.stockQuantity).toFixed(2),
+    stock: formatInteger(rm.stockQuantity),
     actions: (
       <div className="flex justify-end">
         <Button variant="destructive" size="sm" onClick={() => onDelete(rm.id)}>
